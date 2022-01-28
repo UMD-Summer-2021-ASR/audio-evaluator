@@ -1,6 +1,6 @@
 from setuptools import setup
 
-long_description = 'audio_evaluator is a simple, easy-to-use supporting package for Earudite designed to perform ASR ' \
+long_description = 'audioevaluator is a simple, easy-to-use supporting package for Earudite designed to perform ASR ' \
                    'on audios to determine their quality relative to a transcript. '
 
 # specify requirements of your package here
@@ -22,15 +22,15 @@ CLASSIFIERS = [
 
 # calling the setup function
 setup(name='audio-evaluator',
-      version='1.3',
+      version='1.0.4',
       description='A PyTorch wrapper for ASR and Earudite',
       long_description=long_description,
       author='Shivam Malhotra and Andrew Chen',
       author_email='alchen2@andrew.cmu.edu',
       url='https://github.com/achen4290/audio-evaluator',
       license='MIT',
-      packages=['./'],
+      packages=['audioevaluator'],
       classifiers=CLASSIFIERS,
       install_requires=REQUIREMENTS,
-      keywords='maps location address'
+      keywords='asr audio pytorch'
       )
