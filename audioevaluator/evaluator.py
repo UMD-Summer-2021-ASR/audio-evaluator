@@ -22,42 +22,46 @@ class GreedyCTCDecoder(torch.nn.Module):
         return ''.join([self.labels[i] for i in indices])
 
 
-def asr(SPEECH_FILE: str):
-    """
-    Performs ASR on SPEECH_FILE and returns the transcript
-    :param SPEECH_FILE: path to the audio file to perform ASR on
-    :return: string result of ASR
-    """
-    torch.random.manual_seed(0)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+class ASREngine:
+    def __init__(self):
+        torch.random.manual_seed(0)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # print(torch.__version__) # MAKE SURE 1.10.0
-    # print(torchaudio.__version__) # MAKE SURE 0.10.0
-    # print(device)
+        # print(torch.__version__) # MAKE SURE 1.10.0
+        # print(torchaudio.__version__) # MAKE SURE 0.10.0
+        # print(device)
 
-    bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
-    model = bundle.get_model().to(device)
+        self.bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
+        self.model = self.bundle.get_model().to(self.device)
 
-    waveform, sample_rate = torchaudio.load(SPEECH_FILE)
-    waveform = waveform.to(device)
+    def transcribe(self, SPEECH_FILE: str):
+        """
+        Performs ASR on SPEECH_FILE and returns the transcript
+        :param SPEECH_FILE: path to the audio file to perform ASR on
+        :return: string result of ASR
+        """
 
-    if sample_rate != bundle.sample_rate:
-        waveform = torchaudio.functional.resample(waveform, sample_rate, bundle.sample_rate)
+        waveform, sample_rate = torchaudio.load(SPEECH_FILE)
+        waveform = waveform.to(self.device)
 
-    with torch.inference_mode():
-        features, _ = model.extract_features(waveform)
+        if sample_rate != self.bundle.sample_rate:
+            waveform = torchaudio.functional.resample(
+                waveform, sample_rate, self.bundle.sample_rate
+            )
 
-    with torch.inference_mode():
-        emission, _ = model(waveform)
+        with torch.inference_mode():
+            features, _ = self.model.extract_features(waveform)
 
-    decoder = GreedyCTCDecoder(
-        labels=bundle.get_labels(),
-        ignore=(0, 1, 2, 3),
-    )
-    transcript = decoder(emission[0])
-    return transcript
+        with torch.inference_mode():
+            emission, _ = self.model(waveform)
 
+        decoder = GreedyCTCDecoder(
+            labels=self.bundle.get_labels(), ignore=(0, 1, 2, 3),
+        )
+        transcript = decoder(emission[0])
+        return transcript
 
+ASREngine_instance = ASREngine()
 def evaluate_audio(SPEECH_FILE: str, TRANSCRIPT: str) -> Dict[str,float]:
     """
     Evaluates the recording quality of an audio by comparing the ASR result to the original transcript
@@ -65,7 +69,7 @@ def evaluate_audio(SPEECH_FILE: str, TRANSCRIPT: str) -> Dict[str,float]:
     :param TRANSCRIPT: original transcript
     :return: dictionary containing 3 fields: word error rate, match error rate, and word information lost
     """
-    asr_transcript = asr(SPEECH_FILE)
+    asr_transcript = ASREngine_instance.transcribe(SPEECH_FILE)
     asr_transcript = asr_transcript.replace('|', ' ')
 
     transformation = jiwer.Compose([
